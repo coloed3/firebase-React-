@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { projectStorage } from '../firebase/config';
+import {
+  projectStorage,
+  projectFirestore,
+  timestamp,
+} from '../firebase/config';
 
 const useStorage = (file) => {
   const [progress, setProgress] = useState(0);
@@ -7,10 +11,10 @@ const useStorage = (file) => {
   const [url, setUrl] = useState(null);
 
   useEffect(() => {
-    //references
+    // references
     const storageRef = projectStorage.ref(file.name);
+    const collectionRef = projectFirestore.db.collection('images');
 
-    //async
     storageRef.put(file).on(
       'state_changed',
       (snap) => {
@@ -22,10 +26,13 @@ const useStorage = (file) => {
       },
       async () => {
         const url = await storageRef.getDownloadURL();
+        const createdAt = timestamp();
+        await collectionRef.add({ url, createdAt });
         setUrl(url);
       }
     );
   }, [file]);
+
   return { progress, url, error };
 };
 
